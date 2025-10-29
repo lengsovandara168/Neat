@@ -24,3 +24,190 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* --- Custom styles for Birthday page --- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Override base body background with a soft gradient; keep text color from variables */
+body {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  overflow-x: hidden;
+}
+
+.dark body,
+.dark-body {
+  background: radial-gradient(
+      1200px 800px at 10% 10%,
+      rgba(255, 122, 182, 0.25),
+      transparent
+    ),
+    radial-gradient(
+      1000px 600px at 90% 30%,
+      rgba(155, 92, 255, 0.25),
+      transparent
+    ),
+    linear-gradient(135deg, #0f172a 0%, #111827 100%);
+}
+
+/* Cursive helper (fallback to generic cursive if custom font not loaded) */
+.font-cursive {
+  font-family: cursive;
+}
+
+/* Confetti particles */
+.confetti {
+  width: 10px;
+  height: 10px;
+  background-color: #f00;
+  position: absolute;
+  top: -20px;
+  animation: fall 5s linear infinite;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Fullscreen sections */
+.story-section {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem; /* p-10 p-6 */
+}
+
+/* Animated content card */
+.story-content {
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 48rem;
+  width: 100%;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.dark .story-content {
+  background: rgba(17, 24, 39, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.story-content.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hide scrollbar for carousel thumbnails */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 640px) {
+  .story-section {
+    padding: 2rem 1rem;
+  }
+
+  .story-content {
+    padding: 1.5rem 1rem;
+  }
+}
+
+/* Prevent body scroll when carousel is open */
+body.carousel-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Safe area insets for iPhone notch */
+@supports (padding: max(0px)) {
+  .story-section {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
+/* Aceternity UI Animations */
+@keyframes spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-72%, -62%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -40%) scale(1);
+  }
+}
+
+.animate-spotlight {
+  animation: spotlight 2s ease 0.75s forwards;
+}
+
+/* React Bits Animations */
+@keyframes shimmer {
+  0% {
+    rotate: 0deg;
+  }
+  100% {
+    rotate: 360deg;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer var(--speed) linear infinite;
+}
+
+/* Button shimmer effect */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% auto;
+  animation: gradient 5s linear infinite;
+}
+
+.bg-300\% {
+  background-size: 300%;
+}
