@@ -3,25 +3,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CircularGallery } from "@/components/ui/circular-gallery";
-import {
-  Heart,
-  Sparkles,
-  Star,
-  ArrowLeft,
-  Camera,
-  Grid3x3,
-} from "lucide-react";
-import Link from "next/link";
+import { Heart, Sparkles, Star, Camera, Grid3x3 } from "lucide-react";
 import Image from "next/image";
 
 const GALLERY_ITEMS = [
   {
     id: 1,
-    src: "/photos/memories/image_1.jpg",
+    src: "/photos/memories/olympic_2.jpg",
   },
   {
     id: 2,
-    src: "/photos/memories/image_2.jpg",
+    src: "/photos/memories/Olympic.jpg",
   },
   {
     id: 3,
@@ -33,7 +25,7 @@ const GALLERY_ITEMS = [
   },
   {
     id: 5,
-    src: "/photos/memories/image_5.jpg",
+    src: "/photos/memories/image_13.jpg",
   },
   {
     id: 6,
@@ -45,7 +37,7 @@ const GALLERY_ITEMS = [
   },
   {
     id: 8,
-    src: "/photos/memories/image_8.jpg",
+    src: "/photos/memories/selfie_booth.jpg",
   },
   {
     id: 9,
@@ -59,6 +51,10 @@ const GALLERY_ITEMS = [
     id: 11,
     src: "/photos/memories/image_11.jpg",
   },
+  {
+    id: 12,
+    src: "/photos/memories/image_12.jpg",
+  }
 ];
 
 export default function MemoriesPage() {

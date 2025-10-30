@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, MessageCircle, Cake } from "lucide-react";
+import { Star, Cake, Mail } from "lucide-react";
 import Link from "next/link";
 import { AnimatedGradientText } from "./ui/animated-gradient-text";
 import { TextReveal } from "./ui/text-reveal";
@@ -19,15 +19,15 @@ export function FutureSection() {
 
         <TextReveal
           text="May the next chapter be your best one yet, filled with new adventures, dreams come true, and endless happiness."
-          className="text-lg text-gray-600 mb-4 justify-center"
+          className="text-lg text-gray-600 dark:text-gray-300 mb-4 justify-center"
         />
 
-        <p className="text-lg text-gray-600 mb-6">
+        <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
           The world is brighter with you in it. Cheers to another incredible
           year!
         </p>
 
-        <div className="flex flex-col sm:flex-row place-items-center gap-4 mb-8 ">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <Link href="/cake">
             <ShimmerButton
               shimmerColor="#ec4899"
@@ -45,7 +45,7 @@ export function FutureSection() {
               background="linear-gradient(135deg, #14b8a6 0%, #0891b2 100%)"
               className="font-semibold"
             >
-              <MessageCircle className="w-5 h-5 mr-2" />
+              <Mail className="w-5 h-5 mr-2" />
               Read Birthday Messages
             </ShimmerButton>
           </Link>

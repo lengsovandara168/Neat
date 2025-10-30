@@ -1,10 +1,9 @@
 "use client";
 
-import { Heart, Sparkles as SparklesIcon, Camera } from "lucide-react";
+import { Heart, Camera } from "lucide-react";
 import Image from "next/image";
 import { Spotlight } from "./ui/spotlight";
 import { SparklesCore } from "./ui/sparkles";
-import { Button as MovingBorderButton } from "./ui/moving-border";
 
 interface HeroSectionProps {
   name: string;
@@ -37,7 +36,7 @@ export function HeroSection({ name, photoSrc, message }: HeroSectionProps) {
           <span className="text-center">Happy Birthday, {name}!</span>
           {/* <SparklesIcon className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-yellow-400 animate-pulse shrink-0" /> */}
         </h1>
-        <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 mb-6 flex items-center justify-center gap-2 flex-wrap">
+        <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-700 dark:text-gray-200 mb-6 flex items-center justify-center gap-2 flex-wrap">
           To an Amazing Person
           <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-pink-500 fill-pink-500 animate-pulse" />
         </p>
@@ -64,7 +63,7 @@ export function HeroSection({ name, photoSrc, message }: HeroSectionProps) {
           </div>
         </div>
 
-        <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
+        <p className="text-base sm:text-lg text-pink-600 dark:text-pink-300 mb-6 sm:mb-8">
           We&apos;re so glad to celebrate this special day with you. Here&apos;s
           to another fantastic year of adventures and amazing memories!
         </p>
@@ -73,7 +72,7 @@ export function HeroSection({ name, photoSrc, message }: HeroSectionProps) {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-2 w-full sm:w-auto">
           <a
             href="/memories"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-gray-800 font-semibold shadow border border-gray-200 hover:bg-gray-50 active:bg-gray-100 transition w-full sm:w-auto touch-manipulation"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-pink-800 dark:bg-pink dark:text-pink font-semibold shadow border border-gray-200 dark:border-white/20 hover:bg-gray-50 dark:hover:bg-white/20 active:bg-gray-100 dark:active:bg-white/30 transition w-full sm:w-auto touch-manipulation"
           >
             <Camera className="w-5 h-5" />
             See memories

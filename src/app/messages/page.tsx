@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Heart, Sparkles, Star } from "lucide-react";
-import Link from "next/link";
+
 import { cn } from "@/lib/utils";
 
 interface MessageCard {
@@ -18,18 +18,20 @@ interface MessageCard {
 const messages: MessageCard[] = [
   {
     id: 1,
-    title: "Happy Birthday, Monineath!",
+    title: "🎉 Happy Birthday, Monineath! 🎂",
     message:
-      "Hey! Just wanted to say happy birthday and hope you have an amazing day! You're such a great person and I'm really glad we're friends. Thank you for always being kind and genuine. Hope this year brings you lots of happiness, good memories, and all the success you deserve. Enjoy your special day! 🎉",
+      "Just  wish you the happiest birthday and the most amazing day. You’re such a genuine, kind, and inspiring person, and I’m really grateful to call you my friend. As a little gift, I built this website just for you to celebrate you and hopefully bring a smile to your face. May this year bring you so much happiness, beautiful memories, and all the success you deserve. Enjoy your special day! ",
     author: "From Leng Sovandara",
-    color: "from-pink-300 via-purple-500 to-rose-500",
-    icon: <Star className="w-6 h-6" />,
+    color: "from-fuchsia-500 via-pink-500 to-rose-500",
+    icon: (
+      <Star className="w-7 h-7 text-white-300 drop-shadow-[0_0_6px_rgba(255,255,0,0.6)] animate-pulse" />
+    ),
   },
+
   {
     id: 2,
-    title: "Wishing you all the joy",
-    message:
-      "Happiest birthday, Neath! Your smile lights up every room. Keep being your sweet, talented self. May this year be full of good grades, cozy days, and new adventures!",
+    title: "",
+    message: "Happy Birthday",
     author: "From Chea Menghour",
     color: "from-fuchsia-400 via-pink-400 to-orange-400",
     icon: <Heart className="w-6 h-6" />,
@@ -38,36 +40,9 @@ const messages: MessageCard[] = [
     id: 3,
     title: "To more laughs and memories",
     message:
-      "Cheers to another year of inside jokes, late-night talks, and the best food runs. Proud of you always. You got this!",
-    author: "From Sean",
+      "Happy Birthday, Neath!! Welcome to the 20 gang. I wish you happiness, health, and wealth. I just want to say how amazing you are as a friend and how thankful I am to have you by my side. You are the most cheerful person ever; I just want to say that no matter where you go and what you do, just be the fullest version of yourself. Go on with your dream; do your best. I believe you will accomplish it. Love you <3 Hugs & Kisses ",
+    author: "From Nida💋",
     color: "from-indigo-400 via-sky-400 to-cyan-400",
-    icon: <Sparkles className="w-6 h-6" />,
-  },
-  {
-    id: 4,
-    title: "You deserve the best",
-    message:
-      "Happy birthday! Thanks for being such a caring friend. I hope every little wish on your mind finds its way to you this year.",
-    author: "From Meyly",
-    color: "from-violet-500 via-purple-500 to-pink-500",
-    icon: <Star className="w-6 h-6" />,
-  },
-  {
-    id: 5,
-    title: "Keep shining",
-    message:
-      "Moni, your energy is sunshine. Keep shining bright and sharing that kindness. Wishing you peace, growth, and lots of yummy cake!",
-    author: "From Dalin",
-    color: "from-rose-400 via-red-400 to-amber-400",
-    icon: <Heart className="w-6 h-6" />,
-  },
-  {
-    id: 6,
-    title: "So proud of you",
-    message:
-      "Another year, another level up! Proud of everything you've done and excited for everything coming next. Happiest birthday!",
-    author: "From Danich",
-    color: "from-emerald-400 via-teal-400 to-cyan-400",
     icon: <Sparkles className="w-6 h-6" />,
   },
 ];
@@ -87,8 +62,8 @@ export default function MessagesPage() {
             Birthday Messages
           </span>
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300">
-          wish for Mok Chanmonineath
+        <p className="text-2xl text-pink-600 font-bold dark:text-pink-300">
+          for Mok Chanmonineath
         </p>
       </motion.div>
 

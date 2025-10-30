@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, PartyPopper, Mic, MicOff, Music, Pause, Play } from "lucide-react";
+import { PartyPopper, Mic, MicOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Confetti from "@/components/ui/confetti";
+import dynamic from "next/dynamic";
+const Confetti = dynamic(() => import("@/components/ui/confetti"), {
+  ssr: false,
+});
 import { getSoundEffects } from "@/lib/sound-effects";
 
 // Seeded random for consistent particles
@@ -21,22 +24,37 @@ export default function CakePage() {
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [flameIntensity, setFlameIntensity] = useState(1); // 1 = full flame, 0 = extinguished
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [wind, setWind] = useState(0); // 0-1 smoothed blow strength
+  // music removed
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastCelebrateRef = useRef<number>(0);
-  const musicTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // music removed
+  // Calibration and smoothing
+  const baselineSumRef = useRef(0);
+  const baselineCountRef = useRef(0);
+  const baselineRef = useRef(12); // initial fallback baseline
+  const calibratingRef = useRef(false);
+  const windRef = useRef(0);
+  const aboveThresholdMsRef = useRef(0);
+  const lastTsRef = useRef<number>(0);
+  // Temporary extinguish state for hard blow fade
+  const [tempOutActive, setTempOutActive] = useState(false);
+  const tempOutUntilRef = useRef<number>(0);
+  const lastTempFadeRef = useRef<number>(0);
 
+  // Track viewport for particle positioning
   useEffect(() => {
     if (typeof window !== "undefined") {
       setDimensions({ width: window.innerWidth, height: window.innerHeight });
     }
   }, []);
 
+  // Background floating particles
   const particles = useMemo(() => {
-    return [...Array(20)].map((_, i) => ({
+    return [...Array(12)].map((_, i) => ({
       id: i,
       initialX: seededRandom(i * 123) * dimensions.width,
       initialY: seededRandom(i * 456) * dimensions.height,
@@ -46,6 +64,7 @@ export default function CakePage() {
     }));
   }, [dimensions]);
 
+  // Cake sprinkles
   const sprinkles = useMemo(() => {
     return [...Array(20)].map((_, i) => ({
       id: i,
@@ -57,7 +76,6 @@ export default function CakePage() {
 
   const allCandlesOut = candlesLit.every((lit) => !lit);
 
-  // Voice/Audio detection setup
   const startListening = async () => {
     try {
       // Avoid creating multiple AudioContexts (can happen in React StrictMode/Turbopack fast refresh)
@@ -93,8 +111,8 @@ export default function CakePage() {
       const analyser = audioContext.createAnalyser();
       const microphone = audioContext.createMediaStreamSource(stream);
 
-      analyser.smoothingTimeConstant = 0.3; // More responsive
-      analyser.fftSize = 512; // Faster processing
+  analyser.smoothingTimeConstant = 0.25; // responsive but lighter
+  analyser.fftSize = 256; // Lower CPU cost
 
       microphone.connect(analyser);
 
@@ -103,6 +121,20 @@ export default function CakePage() {
       microphoneRef.current = microphone;
 
       setIsListening(true);
+
+      // Start quick ambient calibration
+      calibratingRef.current = true;
+      baselineSumRef.current = 0;
+      baselineCountRef.current = 0;
+      setTimeout(() => {
+        calibratingRef.current = false;
+        const avg = baselineCountRef.current
+          ? baselineSumRef.current / baselineCountRef.current
+          : baselineRef.current;
+        // Keep a sensible lower bound
+        baselineRef.current = Math.max(8, Math.min(50, avg));
+      }, 900);
+
       detectBlow();
     } catch (error) {
       console.error("Microphone access denied:", error);
@@ -156,7 +188,7 @@ export default function CakePage() {
     let lastBlowTime = 0;
     const blowCooldown = 800; // milliseconds between blows
 
-    const checkAudio = () => {
+    const checkAudio = (ts?: number) => {
       if (!analyserRef.current) return;
 
       analyserRef.current.getByteFrequencyData(dataArray);
@@ -174,29 +206,60 @@ export default function CakePage() {
 
       setAudioLevel(blowScore);
 
-      // Update flame intensity based on blow strength
+      // Ambient calibration window
+      if (calibratingRef.current) {
+        baselineSumRef.current += blowScore;
+        baselineCountRef.current += 1;
+      }
+
+      // Dynamic thresholding and smoothing
+      const baseline = baselineRef.current;
+      const adjusted = Math.max(0, blowScore - baseline); // remove ambient
+      const normalized = Math.min(1, adjusted / 100); // 0..1
+      // Exponential moving average for wind strength
+      windRef.current = windRef.current * 0.85 + normalized * 0.15;
+      if (Math.abs(windRef.current - wind) > 0.02) {
+        setWind(windRef.current);
+      }
+
+      // Update flame intensity based on blow strength (consider temporary-out state)
       if (candlesLit[0]) {
-        if (blowScore > 20) {
-          // Fade flame as blowing increases
-          const fadeAmount = Math.min((blowScore - 20) / 50, 1); // 0 to 1
-          setFlameIntensity(1 - fadeAmount * 0.8); // reduce to 20% at max
+        if (tempOutActive) {
+          // Hold flame invisible while temp-out window is active
+          setFlameIntensity(0);
         } else {
-          // Restore flame when not blowing
-          setFlameIntensity(Math.min(flameIntensity + 0.05, 1));
+          const cooling = 0.06 + windRef.current * 0.2; // faster fade with stronger wind
+          const warming = 0.02; // slow recovery
+          setFlameIntensity((prev) => {
+            if (windRef.current > 0.05) {
+              return Math.max(0.15, prev - cooling);
+            }
+            return Math.min(1, prev + warming);
+          });
         }
       }
 
-      // Realistic blow threshold - adjust for sensitivity
-      const blowThreshold = 35;
-      const celebrateThreshold = 70; // strong blow -> celebrate immediately
-      const currentTime = Date.now();
+      // Realistic blow threshold - dynamic and sustained (aligned with UI markers ~35% and ~70%)
+      const blowThreshold = Math.max(25, baseline * 1.6);
+      const hardFadeThreshold = Math.max(45, baseline * 1.9); // hard blow -> celebrate (stronger than normal)
+      const celebrateThreshold = Math.max(70, baseline * 2.3); // very strong blow -> celebrate immediately
+      const now = ts ?? performance.now();
+      const dt = lastTsRef.current ? Math.max(0, now - lastTsRef.current) : 16;
+      lastTsRef.current = now;
+
+      // Release temporary fade when time window passes
+      if (tempOutActive && now >= tempOutUntilRef.current) {
+        setTempOutActive(false);
+        // Snap back the flame so it "pops up"
+        setFlameIntensity(1);
+      }
 
       // High blow celebration shortcut
       if (
         blowScore > celebrateThreshold &&
-        currentTime - lastCelebrateRef.current > 1200
+        now - lastCelebrateRef.current > 1200
       ) {
-        lastCelebrateRef.current = currentTime;
+        lastCelebrateRef.current = now;
         // Ensure candle is out and trigger celebration
         setCandlesLit([false]);
         setShowCelebration(true);
@@ -204,25 +267,47 @@ export default function CakePage() {
         stopListening();
       } else if (
         blowScore > blowThreshold &&
-        currentTime - lastBlowTime > blowCooldown
+        now - lastBlowTime > blowCooldown
       ) {
-        lastBlowTime = currentTime;
-
-        // Blow detected! Extinguish candles from left to right (more natural)
-        const litIndices = candlesLit
-          .map((lit, index) => (lit ? index : -1))
-          .filter((index) => index !== -1);
-
-        if (litIndices.length > 0) {
-          // Blow out the leftmost candle for natural progression
-          blowCandle(litIndices[0]);
+        // Require sustained above-threshold wind ~500ms before extinguish
+        aboveThresholdMsRef.current += dt;
+        if (aboveThresholdMsRef.current > 500) {
+          lastBlowTime = now;
+          aboveThresholdMsRef.current = 0;
+          const litIndices = candlesLit
+            .map((lit, index) => (lit ? index : -1))
+            .filter((index) => index !== -1);
+          if (litIndices.length > 0) {
+            blowCandle(litIndices[0]);
+          }
         }
+      } else if (
+        // Hard blow (below celebrate) -> treat as success and celebrate
+        candlesLit[0] &&
+        blowScore > hardFadeThreshold &&
+        blowScore <= celebrateThreshold &&
+        now - lastTempFadeRef.current > 60
+      ) {
+        lastTempFadeRef.current = now;
+        // Extinguish and celebrate
+        setCandlesLit([false]);
+        setShowCelebration(true);
+        setHasBlownCandles(true);
+        setFlameIntensity(0);
+        stopListening();
+      }
+      if (blowScore <= blowThreshold) {
+        // decay sustained timer when below threshold
+        aboveThresholdMsRef.current = Math.max(
+          0,
+          aboveThresholdMsRef.current - dt * 2
+        );
       }
 
       animationFrameRef.current = requestAnimationFrame(checkAudio);
     };
 
-    checkAudio();
+    checkAudio(performance.now());
   };
 
   useEffect(() => {
@@ -272,121 +357,10 @@ export default function CakePage() {
     if (isListening) {
       stopListening();
     }
-    stopMusic();
   };
 
-  const playHappyBirthdaySong = () => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const AudioCtx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-
-      const audioContext = new AudioCtx();
-      const now = audioContext.currentTime;
-
-      // Happy Birthday melody notes (in Hz)
-      // "Happy birthday to you" twice, "Happy birthday dear [name]", "Happy birthday to you"
-      const melody = [
-        // Happy birth-day to you
-        { note: 262, duration: 0.4 }, // C4 - Hap
-        { note: 262, duration: 0.2 }, // C4 - py
-        { note: 294, duration: 0.6 }, // D4 - birth
-        { note: 262, duration: 0.6 }, // C4 - day
-        { note: 349, duration: 0.6 }, // F4 - to
-        { note: 330, duration: 1.2 }, // E4 - you
-
-        // Happy birth-day to you
-        { note: 262, duration: 0.4 }, // C4
-        { note: 262, duration: 0.2 }, // C4
-        { note: 294, duration: 0.6 }, // D4
-        { note: 262, duration: 0.6 }, // C4
-        { note: 392, duration: 0.6 }, // G4
-        { note: 349, duration: 1.2 }, // F4
-
-        // Happy birth-day dear [name]
-        { note: 262, duration: 0.4 }, // C4
-        { note: 262, duration: 0.2 }, // C4
-        { note: 523, duration: 0.6 }, // C5
-        { note: 440, duration: 0.6 }, // A4
-        { note: 349, duration: 0.6 }, // F4
-        { note: 330, duration: 0.6 }, // E4
-        { note: 294, duration: 1.2 }, // D4
-
-        // Happy birth-day to you
-        { note: 466, duration: 0.4 }, // Bb4
-        { note: 466, duration: 0.2 }, // Bb4
-        { note: 440, duration: 0.6 }, // A4
-        { note: 349, duration: 0.6 }, // F4
-        { note: 392, duration: 0.6 }, // G4
-        { note: 349, duration: 1.2 }, // F4
-      ];
-
-      let currentTime = now + 0.1;
-
-      melody.forEach((noteData) => {
-        // Create oscillator for melody
-        const osc = audioContext.createOscillator();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(noteData.note, currentTime);
-
-        // Create gain for envelope
-        const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0, currentTime);
-        gain.gain.linearRampToValueAtTime(0.3, currentTime + 0.05);
-        gain.gain.setValueAtTime(0.3, currentTime + noteData.duration - 0.1);
-        gain.gain.linearRampToValueAtTime(0, currentTime + noteData.duration);
-
-        // Connect nodes
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-
-        // Play note
-        osc.start(currentTime);
-        osc.stop(currentTime + noteData.duration);
-
-        currentTime += noteData.duration;
-      });
-
-      setIsMusicPlaying(true);
-
-      // Stop music playing state after song finishes
-      const songDuration = melody.reduce((sum, note) => sum + note.duration, 0) * 1000;
-      musicTimeoutRef.current = setTimeout(() => {
-        setIsMusicPlaying(false);
-      }, songDuration);
-    } catch (error) {
-      console.error("Failed to play Happy Birthday song:", error);
-    }
-  };
-
-  const stopMusic = () => {
-    if (musicTimeoutRef.current) {
-      clearTimeout(musicTimeoutRef.current);
-      musicTimeoutRef.current = null;
-    }
-    setIsMusicPlaying(false);
-  };
-
-  const toggleMusic = () => {
-    if (isMusicPlaying) {
-      stopMusic();
-    } else {
-      playHappyBirthdaySong();
-    }
-  };
-
-  // Auto-play music when celebration starts
-  useEffect(() => {
-    if (showCelebration && !isMusicPlaying) {
-      // Small delay before auto-playing
-      const timer = setTimeout(() => {
-        playHappyBirthdaySong();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCelebration]);
+  // Music playback removed
+  // Auto-play music removed
 
   return (
     <div className="min-h-screen bg-linear-to-br from-pink-950 via-purple-950 to-indigo-950 text-white overflow-hidden relative">
@@ -413,42 +387,7 @@ export default function CakePage() {
         ))}
       </div>
 
-      {/* Back Button */}
-      <div className="fixed top-4 left-4 z-50">
-        <Link
-          href="/"
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all duration-300"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
-        </Link>
-      </div>
-
-      {/* Music Control Button */}
-      <motion.div 
-        className="fixed top-4 right-4 z-50"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, type: "spring" }}
-      >
-        <button
-          onClick={toggleMusic}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all duration-300 group"
-          aria-label={isMusicPlaying ? "Pause music" : "Play music"}
-        >
-          {isMusicPlaying ? (
-            <>
-              <Pause className="w-4 h-4 animate-pulse" />
-              <span className="hidden sm:inline">Playing...</span>
-            </>
-          ) : (
-            <>
-              <Music className="w-4 h-4" />
-              <span className="hidden sm:inline">Play Song</span>
-            </>
-          )}
-        </button>
-      </motion.div>
+      {/* Music Control Removed */}
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
         {/* Header - Fluid Glass */}
@@ -481,7 +420,7 @@ export default function CakePage() {
 
             {/* Content */}
             <div className="relative z-10 px-6 py-8 md:px-10 md:py-12 text-center">
-              <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-linear-to-r from-pink-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+              <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-linear-to-r    ">
                 Make a Wish! 🎂
               </h1>
               <p className="text-xl text-gray-800/80 dark:text-gray-300 max-w-2xl mx-auto mb-6">
@@ -773,6 +712,8 @@ export default function CakePage() {
                     animate={{
                       opacity: flameIntensity,
                       scale: flameIntensity,
+                      x: wind * 8,
+                      rotate: -wind * 12,
                     }}
                     exit={{
                       opacity: 0,
@@ -1009,8 +950,8 @@ export default function CakePage() {
             </p>
             <p className="text-sm text-gray-400">
               {isListening
-                ? "💨 Blow steadily into your microphone to extinguish the candle!"
-                : "👆 Click the candle or enable voice mode to blow it out"}
+                ? " Blow steadily into your microphone to extinguish the candle!"
+                : " Click the candle or enable voice mode to blow it out"}
             </p>
             {isListening && (
               <motion.p
@@ -1029,7 +970,7 @@ export default function CakePage() {
           {showCelebration && (
             <>
               {/* Confetti Effect */}
-              <Confetti count={80} />
+              <Confetti count={50} />
 
               <motion.div
                 className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
@@ -1061,26 +1002,6 @@ export default function CakePage() {
                     May all your wishes come true!
                   </p>
 
-                  {/* Music Control Button */}
-                  <motion.button
-                    onClick={toggleMusic}
-                    className="mb-6 inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-full font-medium transition-all duration-300 backdrop-blur-sm border border-white/30"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {isMusicPlaying ? (
-                      <>
-                        <Pause className="w-5 h-5" />
-                        <span>Pause Song</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-5 h-5" />
-                        <span>Play Song</span>
-                      </>
-                    )}
-                  </motion.button>
-
                   <div className="flex gap-4 justify-center">
                     <button
                       onClick={relightCandles}
@@ -1089,7 +1010,7 @@ export default function CakePage() {
                       Blow Again
                     </button>
                     <Link
-                      href="/"
+                      href="/home"
                       className="px-6 py-3 bg-purple-700 text-white rounded-full font-bold hover:bg-purple-800 transition"
                     >
                       Back to Party

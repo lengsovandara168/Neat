@@ -1,5 +1,5 @@
 "use client";
-import { Cake, Sun, Moon, MessageCircle, Menu, X } from "lucide-react";
+import { Cake, Sun, Moon, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -7,6 +7,15 @@ import { useState } from "react";
 export function BirthdayHeader() {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const toggleTheme = () => {
+    try {
+      const root = document.documentElement;
+      const isDark = root.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    } catch {
+      // no-op
+    }
+  };
   return (
     <header className="sticky top-0 z-30 overflow-hidden backdrop-blur-xl bg-white/10 dark:bg-white/5 border-b border-white/15">
       {/* Fluid gradient blobs behind the glass header */}
@@ -31,16 +40,18 @@ export function BirthdayHeader() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <Cake className="w-6 h-6 text-pink-500" />
-            <span className="font-cursive text-2xl text-pink-600">
-              Happy Day
-            </span>
-          </div>
+          <Link href="/">
+            <div className="flex items-center gap-2">
+              <Cake className="w-6 h-6  text-pink-500" />
+              <span className="font-cursive text-2xl text-pink-600">
+                Happy Birthday
+              </span>
+            </div>
+          </Link>
 
-          <nav className="hidden sm:flex items-center gap-6 text-sm font-semibold">
+          <nav className=" hidden sm:flex  gap-30 text-sm font-semibold items-center-safe">
             <Link
-              href="/"
+              href="/home"
               className="text-gray-700 dark:text-gray-200 hover:text-pink-400 transition-colors"
             >
               Home
@@ -63,6 +74,7 @@ export function BirthdayHeader() {
           <div className="flex items-center gap-2">
             <button
               id="theme-toggle"
+              onClick={toggleTheme}
               className="inline-flex items-center gap-2 w-10 h-10 justify-center rounded-md border border-white/30 dark:border-white/10 bg-white/40 dark:bg-white/10 hover:bg-white/60 dark:hover:bg-white/20 transition"
             >
               <Sun className="w-4 h-4 dark:hidden" />
@@ -92,7 +104,7 @@ export function BirthdayHeader() {
           <div className="mt-2 mb-4 rounded-2xl border border-white/20 bg-white/60 dark:bg-white/10 backdrop-blur-xl shadow-lg">
             <nav className="flex flex-col p-3 text-sm font-semibold">
               <Link
-                href="/"
+                href="/home"
                 onClick={close}
                 className="px-3 py-2 rounded-md text-gray-800 dark:text-gray-100 hover:bg-white/70 dark:hover:bg-white/20 transition"
               >
