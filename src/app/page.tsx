@@ -4,9 +4,16 @@ import { motion } from "framer-motion";
 import { Sparkles, Heart, Star, Zap } from "lucide-react";
 import { HeroSection } from "@/components/HeroSection";
 import { FutureSection } from "@/components/FutureSection";
-import { BlobCursor } from "@/components/ui/blob-cursor";
+import dynamic from "next/dynamic";
 
-import Carousel from "@/components/ui/carousel";
+// Lazy load heavy client-only components to reduce initial bundle
+const BlobCursor = dynamic(
+  () => import("@/components/ui/blob-cursor").then((m) => m.BlobCursor),
+  { ssr: false }
+);
+const Carousel = dynamic(() => import("@/components/ui/carousel"), {
+  ssr: false,
+});
 
 import {
   useConfetti,

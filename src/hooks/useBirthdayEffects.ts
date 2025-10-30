@@ -7,7 +7,8 @@ export function useConfetti() {
     const confettiContainer = document.getElementById("confetti-container");
     if (!confettiContainer) return;
 
-    const confettiCount = 100;
+  // reduced initial confetti to improve performance
+  const confettiCount = 28;
     const colors = [
       "#ff4e4e",
       "#4effa1",
@@ -24,11 +25,12 @@ export function useConfetti() {
       confetti.style.backgroundColor =
         colors[Math.floor(Math.random() * colors.length)];
       confetti.style.left = Math.random() * 100 + "vw";
-      const duration = Math.random() * 3 + 4;
-      const delay = Math.random() * 5;
+      // shorter animations on initial stream
+      const duration = Math.random() * 2 + 2.5;
+      const delay = Math.random() * 2;
       confetti.style.animationDuration = duration + "s";
       confetti.style.animationDelay = delay + "s";
-      const size = Math.random() * 5 + 5;
+      const size = Math.random() * 4 + 6;
       confetti.style.width = size + "px";
       confetti.style.height = size + "px";
       confetti.style.opacity = String(Math.random() * 0.5 + 0.5);
@@ -36,11 +38,8 @@ export function useConfetti() {
     }
 
     // Confetti burst function
-    const confettiBurst = (
-      count = 60,
-      x = window.innerWidth / 2,
-      spread = 160
-    ) => {
+    // smaller bursts to avoid huge CPU spikes
+    const confettiBurst = (count = 40, x = window.innerWidth / 2, spread = 140) => {
       for (let i = 0; i < count; i++) {
         const c = document.createElement("div");
         c.classList.add("confetti");
@@ -49,9 +48,9 @@ export function useConfetti() {
         const offset = (Math.random() - 0.5) * spread;
         c.style.left = x + offset + "px";
         c.style.top = "0px";
-        const duration = Math.random() * 2 + 2.5;
+        const duration = Math.random() * 1.6 + 1.6;
         c.style.animationDuration = duration + "s";
-        const size = Math.random() * 6 + 6;
+        const size = Math.random() * 4 + 6;
         c.style.width = size + "px";
         c.style.height = size + "px";
         c.style.opacity = String(Math.random() * 0.5 + 0.5);

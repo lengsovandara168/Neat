@@ -2,27 +2,41 @@
 
 import { useEffect, useRef } from "react";
 
+// Use a requestAnimationFrame loop and transforms (GPU) to reduce layout thrash
 export const BlobCursor = () => {
   const blobRef = useRef<HTMLDivElement>(null);
+  const target = useRef({ x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const blob = blobRef.current;
     if (!blob) return;
 
-    const handlePointerMove = (e: PointerEvent) => {
-      const { clientX, clientY } = e;
-      blob.animate(
-        {
-          left: `${clientX}px`,
-          top: `${clientY}px`,
-        },
-        { duration: 4000, fill: "forwards" }
-      );
+    let running = true;
+
+    const update = () => {
+      if (!running) return;
+      const { x, y } = target.current;
+      // use translate3d to avoid layout and ensure GPU compositing
+      blob.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      rafRef.current = requestAnimationFrame(update);
     };
 
-    window.addEventListener("pointermove", handlePointerMove);
+    const handlePointerMove = (e: PointerEvent) => {
+      // only track mouse pointers (skip touch) to save CPU on mobile
+      if (e.pointerType && e.pointerType !== "mouse") return;
+      // center the blob on cursor while using translate to avoid layout
+      target.current.x = e.clientX - blob.offsetWidth / 2;
+      target.current.y = e.clientY - blob.offsetHeight / 2;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+
+    rafRef.current = requestAnimationFrame(update);
 
     return () => {
+      running = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       window.removeEventListener("pointermove", handlePointerMove);
     };
   }, []);
@@ -30,8 +44,9 @@ export const BlobCursor = () => {
   return (
     <div
       ref={blobRef}
-      className="fixed -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-linear-to-r from-pink-400 via-purple-400 to-pink-400 opacity-30 blur-3xl pointer-events-none"
-      style={{ left: "50%", top: "50%" }}
+      aria-hidden
+      className="fixed -z-10 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-linear-to-r from-pink-400 via-purple-400 to-pink-400 opacity-30 blur-3xl pointer-events-none"
+      style={{ left: "50%", top: "50%", transform: "translate3d(-50%, -50%, 0)" }}
     />
   );
 };
