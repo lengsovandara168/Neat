@@ -25,6 +25,7 @@ export function PhotoCarousel({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   // Lock body scroll when carousel is open
   useEffect(() => {
@@ -38,14 +39,27 @@ export function PhotoCarousel({
     };
   }, [isOpen]);
 
+  // Auto-advance carousel
+  useEffect(() => {
+    if (!isOpen || !isAutoPlaying || photos.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+    }, 3500); // Change slide every 3.5 seconds
+
+    return () => clearInterval(timer);
+  }, [isOpen, isAutoPlaying, photos.length]);
+
   if (!isOpen) return null;
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+    setIsAutoPlaying(false); // Pause autoplay when user interacts
   };
 
   const goToNext = () => {
     setCurrentIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+    setIsAutoPlaying(false); // Pause autoplay when user interacts
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

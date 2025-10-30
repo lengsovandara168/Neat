@@ -12,6 +12,7 @@ interface MessageCard {
   author: string;
   color: string;
   icon: React.ReactNode;
+  isUserGenerated?: boolean;
 }
 
 const messages: MessageCard[] = [
@@ -28,8 +29,8 @@ const messages: MessageCard[] = [
     id: 2,
     title: "Wishing you all the joy",
     message:
-      "Happiest birthday, Moni! Your smile lights up every room. Keep being your sweet, talented self. May this year be full of good grades, cozy days, and new adventures!",
-    author: "From Sreypich",
+      "Happiest birthday, Neath! Your smile lights up every room. Keep being your sweet, talented self. May this year be full of good grades, cozy days, and new adventures!",
+    author: "From Chea Menghour",
     color: "from-fuchsia-400 via-pink-400 to-orange-400",
     icon: <Heart className="w-6 h-6" />,
   },
@@ -38,7 +39,7 @@ const messages: MessageCard[] = [
     title: "To more laughs and memories",
     message:
       "Cheers to another year of inside jokes, late-night talks, and the best food runs. Proud of you always. You got this!",
-    author: "From Rithy",
+    author: "From Sean",
     color: "from-indigo-400 via-sky-400 to-cyan-400",
     icon: <Sparkles className="w-6 h-6" />,
   },
@@ -47,7 +48,7 @@ const messages: MessageCard[] = [
     title: "You deserve the best",
     message:
       "Happy birthday! Thanks for being such a caring friend. I hope every little wish on your mind finds its way to you this year.",
-    author: "From Bopha",
+    author: "From Meyly",
     color: "from-violet-500 via-purple-500 to-pink-500",
     icon: <Star className="w-6 h-6" />,
   },
@@ -56,7 +57,7 @@ const messages: MessageCard[] = [
     title: "Keep shining",
     message:
       "Moni, your energy is sunshine. Keep shining bright and sharing that kindness. Wishing you peace, growth, and lots of yummy cake!",
-    author: "From Vanna",
+    author: "From Dalin",
     color: "from-rose-400 via-red-400 to-amber-400",
     icon: <Heart className="w-6 h-6" />,
   },
@@ -65,7 +66,7 @@ const messages: MessageCard[] = [
     title: "So proud of you",
     message:
       "Another year, another level up! Proud of everything you've done and excited for everything coming next. Happiest birthday!",
-    author: "From Sokun",
+    author: "From Danich",
     color: "from-emerald-400 via-teal-400 to-cyan-400",
     icon: <Sparkles className="w-6 h-6" />,
   },
@@ -74,29 +75,6 @@ const messages: MessageCard[] = [
 export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900 py-20 px-4">
-      {/* Back button */}
-      <div className="max-w-7xl mx-auto mb-12">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/60 dark:bg-white/10 backdrop-blur-sm border border-white/40 hover:bg-white/80 dark:hover:bg-white/20 transition"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          Back to Birthday Page
-        </Link>
-      </div>
-
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -119,9 +97,12 @@ export default function MessagesPage() {
         {messages.map((card, index) => (
           <motion.div
             key={card.id}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
+            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{
+              duration: 0.5,
+              delay: index * 0.1,
+            }}
             whileHover={{ y: -8, transition: { duration: 0.2 } }}
             className="group"
           >

@@ -20,28 +20,44 @@ export function CircularGallery({ items, radius = 280 }: CircularGalleryProps) {
   const [rotation, setRotation] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  const angleStep = 360 / items.length;
 
   // Avoid SSR hydration mismatches by rendering only on the client
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const angleStep = 360 / items.length;
+  // Auto-rotate gallery
+  useEffect(() => {
+    if (!isAutoPlaying || items.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % items.length);
+      setRotation((prev) => prev - angleStep);
+    }, 3500); // Change every 3.5 seconds
+
+    return () => clearInterval(timer);
+  }, [isAutoPlaying, items.length, angleStep]);
 
   const handlePrevious = () => {
     setActiveIndex((prev) => (prev - 1 + items.length) % items.length);
     setRotation((prev) => prev + angleStep);
+    setIsAutoPlaying(false); // Pause autoplay on user interaction
   };
 
   const handleNext = () => {
     setActiveIndex((prev) => (prev + 1) % items.length);
     setRotation((prev) => prev - angleStep);
+    setIsAutoPlaying(false); // Pause autoplay on user interaction
   };
 
   const handleItemClick = (index: number) => {
     const diff = index - activeIndex;
     setActiveIndex(index);
     setRotation((prev) => prev - diff * angleStep);
+    setIsAutoPlaying(false); // Pause autoplay on user interaction
   };
 
   useEffect(() => {

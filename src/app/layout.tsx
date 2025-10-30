@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { BirthdayHeader } from "@/components/BirthdayHeader";
+import { BirthdayFooter } from "@/components/BirthdayFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,6 +18,17 @@ export const metadata: Metadata = {
   title: "Happy Birthday, Mok Chanmonineath!",
   description:
     "A delightful birthday greeting with memories, celebration, and future wishes for Mok Chanmonineath.",
+  icons: {
+    icon: [{ url: "/photos/image_profile.jpg", type: "image/jpeg" }],
+    apple: [
+      {
+        url: "/photos/image_profile.jpg",
+        sizes: "180x180",
+        type: "image/jpeg",
+      },
+    ],
+    shortcut: "/photos/image_profile.jpg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -46,7 +59,9 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <BirthdayHeader />
         {children}
+        <BirthdayFooter />
       </body>
     </html>
   );

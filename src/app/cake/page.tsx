@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, PartyPopper, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, PartyPopper, Mic, MicOff, Music, Pause, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Confetti from "@/components/ui/confetti";
+import { getSoundEffects } from "@/lib/sound-effects";
 
 // Seeded random for consistent particles
 function seededRandom(seed: number) {
@@ -18,10 +20,14 @@ export default function CakePage() {
   const [dimensions, setDimensions] = useState({ width: 1000, height: 800 });
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [flameIntensity, setFlameIntensity] = useState(1); // 1 = full flame, 0 = extinguished
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const lastCelebrateRef = useRef<number>(0);
+  const musicTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -168,11 +174,35 @@ export default function CakePage() {
 
       setAudioLevel(blowScore);
 
+      // Update flame intensity based on blow strength
+      if (candlesLit[0]) {
+        if (blowScore > 20) {
+          // Fade flame as blowing increases
+          const fadeAmount = Math.min((blowScore - 20) / 50, 1); // 0 to 1
+          setFlameIntensity(1 - fadeAmount * 0.8); // reduce to 20% at max
+        } else {
+          // Restore flame when not blowing
+          setFlameIntensity(Math.min(flameIntensity + 0.05, 1));
+        }
+      }
+
       // Realistic blow threshold - adjust for sensitivity
       const blowThreshold = 35;
+      const celebrateThreshold = 70; // strong blow -> celebrate immediately
       const currentTime = Date.now();
 
+      // High blow celebration shortcut
       if (
+        blowScore > celebrateThreshold &&
+        currentTime - lastCelebrateRef.current > 1200
+      ) {
+        lastCelebrateRef.current = currentTime;
+        // Ensure candle is out and trigger celebration
+        setCandlesLit([false]);
+        setShowCelebration(true);
+        setHasBlownCandles(true);
+        stopListening();
+      } else if (
         blowScore > blowThreshold &&
         currentTime - lastBlowTime > blowCooldown
       ) {
@@ -206,6 +236,15 @@ export default function CakePage() {
       setHasBlownCandles(true);
       setShowCelebration(true);
       stopListening();
+
+      // Play celebration sound effect
+      setTimeout(() => {
+        try {
+          getSoundEffects().playCelebration();
+        } catch (error) {
+          console.error("Failed to play celebration sound:", error);
+        }
+      }, 200); // Small delay for modal animation
     }
   }, [allCandlesOut, hasBlownCandles]);
 
@@ -214,6 +253,14 @@ export default function CakePage() {
       const newCandles = [...candlesLit];
       newCandles[index] = false;
       setCandlesLit(newCandles);
+      setFlameIntensity(0);
+
+      // Play blow sound effect
+      try {
+        getSoundEffects().playBlow();
+      } catch (error) {
+        console.error("Failed to play blow sound:", error);
+      }
     }
   };
 
@@ -221,10 +268,125 @@ export default function CakePage() {
     setCandlesLit([true]); // Relight one candle
     setShowCelebration(false);
     setHasBlownCandles(false);
+    setFlameIntensity(1);
     if (isListening) {
       stopListening();
     }
+    stopMusic();
   };
+
+  const playHappyBirthdaySong = () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const AudioCtx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+
+      const audioContext = new AudioCtx();
+      const now = audioContext.currentTime;
+
+      // Happy Birthday melody notes (in Hz)
+      // "Happy birthday to you" twice, "Happy birthday dear [name]", "Happy birthday to you"
+      const melody = [
+        // Happy birth-day to you
+        { note: 262, duration: 0.4 }, // C4 - Hap
+        { note: 262, duration: 0.2 }, // C4 - py
+        { note: 294, duration: 0.6 }, // D4 - birth
+        { note: 262, duration: 0.6 }, // C4 - day
+        { note: 349, duration: 0.6 }, // F4 - to
+        { note: 330, duration: 1.2 }, // E4 - you
+
+        // Happy birth-day to you
+        { note: 262, duration: 0.4 }, // C4
+        { note: 262, duration: 0.2 }, // C4
+        { note: 294, duration: 0.6 }, // D4
+        { note: 262, duration: 0.6 }, // C4
+        { note: 392, duration: 0.6 }, // G4
+        { note: 349, duration: 1.2 }, // F4
+
+        // Happy birth-day dear [name]
+        { note: 262, duration: 0.4 }, // C4
+        { note: 262, duration: 0.2 }, // C4
+        { note: 523, duration: 0.6 }, // C5
+        { note: 440, duration: 0.6 }, // A4
+        { note: 349, duration: 0.6 }, // F4
+        { note: 330, duration: 0.6 }, // E4
+        { note: 294, duration: 1.2 }, // D4
+
+        // Happy birth-day to you
+        { note: 466, duration: 0.4 }, // Bb4
+        { note: 466, duration: 0.2 }, // Bb4
+        { note: 440, duration: 0.6 }, // A4
+        { note: 349, duration: 0.6 }, // F4
+        { note: 392, duration: 0.6 }, // G4
+        { note: 349, duration: 1.2 }, // F4
+      ];
+
+      let currentTime = now + 0.1;
+
+      melody.forEach((noteData) => {
+        // Create oscillator for melody
+        const osc = audioContext.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(noteData.note, currentTime);
+
+        // Create gain for envelope
+        const gain = audioContext.createGain();
+        gain.gain.setValueAtTime(0, currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, currentTime + 0.05);
+        gain.gain.setValueAtTime(0.3, currentTime + noteData.duration - 0.1);
+        gain.gain.linearRampToValueAtTime(0, currentTime + noteData.duration);
+
+        // Connect nodes
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+
+        // Play note
+        osc.start(currentTime);
+        osc.stop(currentTime + noteData.duration);
+
+        currentTime += noteData.duration;
+      });
+
+      setIsMusicPlaying(true);
+
+      // Stop music playing state after song finishes
+      const songDuration = melody.reduce((sum, note) => sum + note.duration, 0) * 1000;
+      musicTimeoutRef.current = setTimeout(() => {
+        setIsMusicPlaying(false);
+      }, songDuration);
+    } catch (error) {
+      console.error("Failed to play Happy Birthday song:", error);
+    }
+  };
+
+  const stopMusic = () => {
+    if (musicTimeoutRef.current) {
+      clearTimeout(musicTimeoutRef.current);
+      musicTimeoutRef.current = null;
+    }
+    setIsMusicPlaying(false);
+  };
+
+  const toggleMusic = () => {
+    if (isMusicPlaying) {
+      stopMusic();
+    } else {
+      playHappyBirthdaySong();
+    }
+  };
+
+  // Auto-play music when celebration starts
+  useEffect(() => {
+    if (showCelebration && !isMusicPlaying) {
+      // Small delay before auto-playing
+      const timer = setTimeout(() => {
+        playHappyBirthdaySong();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCelebration]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-pink-950 via-purple-950 to-indigo-950 text-white overflow-hidden relative">
@@ -261,6 +423,32 @@ export default function CakePage() {
           <span>Back to Home</span>
         </Link>
       </div>
+
+      {/* Music Control Button */}
+      <motion.div 
+        className="fixed top-4 right-4 z-50"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5, type: "spring" }}
+      >
+        <button
+          onClick={toggleMusic}
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all duration-300 group"
+          aria-label={isMusicPlaying ? "Pause music" : "Play music"}
+        >
+          {isMusicPlaying ? (
+            <>
+              <Pause className="w-4 h-4 animate-pulse" />
+              <span className="hidden sm:inline">Playing...</span>
+            </>
+          ) : (
+            <>
+              <Music className="w-4 h-4" />
+              <span className="hidden sm:inline">Play Song</span>
+            </>
+          )}
+        </button>
+      </motion.div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
         {/* Header - Fluid Glass */}
@@ -341,7 +529,9 @@ export default function CakePage() {
                     <div className="w-full h-4 bg-black/20 dark:bg-gray-800 rounded-full overflow-hidden border border-white/20 dark:border-gray-700">
                       <motion.div
                         className={`h-full transition-colors duration-300 ${
-                          audioLevel > 35
+                          audioLevel > 70
+                            ? "bg-linear-to-r from-yellow-400 via-pink-500 to-purple-600"
+                            : audioLevel > 35
                             ? "bg-linear-to-r from-green-500 to-emerald-500"
                             : "bg-linear-to-r from-pink-500 to-purple-500"
                         }`}
@@ -355,15 +545,27 @@ export default function CakePage() {
                     <div className="absolute top-0 bottom-0 left-[35%] w-0.5 bg-yellow-400/70 opacity-70">
                       <div className="absolute -top-1 -left-1 w-2 h-2 bg-yellow-400 rounded-full" />
                     </div>
+                    {/* Celebrate indicator */}
+                    <div className="absolute top-0 bottom-0 left-[70%] w-0.5 bg-pink-400/80 opacity-80">
+                      <div className="absolute -top-1 -left-1 w-2 h-2 bg-pink-400 rounded-full" />
+                    </div>
                   </div>
                   <div className="flex justify-between text-xs text-gray-700/80 dark:text-gray-500 mt-1">
                     <span>Volume: {Math.round(audioLevel)}</span>
                     <span
                       className={
-                        audioLevel > 35 ? "text-green-400 font-bold" : ""
+                        audioLevel > 70
+                          ? "text-pink-300 font-bold"
+                          : audioLevel > 35
+                          ? "text-green-400 font-bold"
+                          : ""
                       }
                     >
-                      {audioLevel > 35 ? "🔥 Blowing!" : "Blow harder →"}
+                      {audioLevel > 100
+                        ? "🎉 Celebration!"
+                        : audioLevel > 35
+                        ? "🔥 Blowing!"
+                        : "Blow harder →"}
                     </span>
                   </div>
                 </motion.div>
@@ -405,11 +607,17 @@ export default function CakePage() {
               animate={
                 allCandlesOut
                   ? {
-                      scale: [1, 1.02, 1],
+                      scale: [1, 1.08, 0.98, 1.05, 1],
+                      y: [0, -10, 5, -3, 0],
                     }
                   : {}
               }
-              transition={{ duration: 0.8, repeat: Infinity }}
+              transition={{
+                duration: 1.2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                times: [0, 0.3, 0.5, 0.7, 1],
+              }}
               style={{ transformOrigin: "200px 400px" }}
             >
               {/* Base layer */}
@@ -452,11 +660,18 @@ export default function CakePage() {
               animate={
                 allCandlesOut
                   ? {
-                      scale: [1, 1.03, 1],
+                      scale: [1, 1.12, 0.96, 1.08, 1],
+                      y: [0, -15, 8, -5, 0],
+                      rotate: [0, -2, 2, -1, 0],
                     }
                   : {}
               }
-              transition={{ duration: 0.7, repeat: Infinity }}
+              transition={{
+                duration: 1.0,
+                repeat: Infinity,
+                ease: "easeInOut",
+                times: [0, 0.25, 0.5, 0.75, 1],
+              }}
               style={{ transformOrigin: "200px 280px" }}
             >
               {/* Main top layer */}
@@ -555,14 +770,17 @@ export default function CakePage() {
                 {candlesLit[0] && (
                   <motion.g
                     initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    animate={{
+                      opacity: flameIntensity,
+                      scale: flameIntensity,
+                    }}
                     exit={{
                       opacity: 0,
                       scale: 0,
                       y: -30,
                       x: [0, 10, -10, 0],
                     }}
-                    transition={{ duration: 0.4 }}
+                    transition={{ duration: 0.2 }}
                   >
                     {/* Outer flame */}
                     <motion.ellipse
@@ -573,15 +791,19 @@ export default function CakePage() {
                       fill="url(#flameGradient1)"
                       filter="url(#flameGlow)"
                       animate={{
-                        scale: [1, 1.1, 1],
-                        y: [0, -2, 0],
+                        scale: [1, 1.1 * flameIntensity, 1],
+                        y: [0, -2 * flameIntensity, 0],
+                        x: flameIntensity < 0.6 ? [0, 5, -5, 0] : [0, 0, 0, 0], // flicker when fading
                       }}
                       transition={{
                         duration: 0.5,
                         repeat: Infinity,
                         ease: "easeInOut",
                       }}
-                      style={{ transformOrigin: "200px 175px" }}
+                      style={{
+                        transformOrigin: "200px 175px",
+                        opacity: flameIntensity,
+                      }}
                     />
 
                     {/* Inner flame */}
@@ -592,13 +814,55 @@ export default function CakePage() {
                       ry="15"
                       fill="url(#flameGradient2)"
                       animate={{
-                        opacity: [0.8, 1, 0.8],
+                        opacity: [
+                          0.8 * flameIntensity,
+                          1 * flameIntensity,
+                          0.8 * flameIntensity,
+                        ],
                       }}
                       transition={{
                         duration: 0.3,
                         repeat: Infinity,
                       }}
+                      style={{ opacity: flameIntensity }}
                     />
+
+                    {/* Flame particles/embers - only visible when flame is lit */}
+                    {[0, 1, 2, 3, 4].map((i) => {
+                      const baseX = 200;
+                      const baseY = 175;
+                      const angle = seededRandom(i * 111) * Math.PI * 2;
+                      const distance = seededRandom(i * 222) * 15 + 10;
+                      const startX = baseX + Math.cos(angle) * (distance / 2);
+                      const startY = baseY + Math.sin(angle) * (distance / 2);
+                      const endX = baseX + Math.cos(angle) * distance;
+                      const endY = baseY - 20 - seededRandom(i * 333) * 15;
+                      const delay = seededRandom(i * 444) * 0.5;
+
+                      return (
+                        <motion.circle
+                          key={i}
+                          cx={startX}
+                          cy={startY}
+                          r="1.5"
+                          fill="#fbbf24"
+                          filter="url(#flameGlow)"
+                          animate={{
+                            cx: [startX, endX, startX],
+                            cy: [startY, endY, startY],
+                            opacity: [0, flameIntensity * 0.8, 0],
+                            scale: [0.5, 1, 0.5],
+                          }}
+                          transition={{
+                            duration: 1.5 + seededRandom(i * 555) * 0.5,
+                            repeat: Infinity,
+                            delay: delay,
+                            ease: "easeOut",
+                          }}
+                          style={{ opacity: flameIntensity > 0.3 ? 1 : 0 }}
+                        />
+                      );
+                    })}
                   </motion.g>
                 )}
               </AnimatePresence>
@@ -763,51 +1027,77 @@ export default function CakePage() {
         {/* Celebration Message */}
         <AnimatePresence>
           {showCelebration && (
-            <motion.div
-              className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
+            <>
+              {/* Confetti Effect */}
+              <Confetti count={80} />
+
               <motion.div
-                className="bg-linear-to-br from-pink-500 via-purple-500 to-pink-500 p-12 rounded-3xl shadow-2xl text-center max-w-lg mx-4"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 180 }}
-                transition={{ type: "spring", duration: 0.8 }}
+                className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
                 <motion.div
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{
-                    duration: 0.5,
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                  }}
+                  className="bg-linear-to-br from-pink-500 via-purple-500 to-pink-500 p-12 rounded-3xl shadow-2xl text-center max-w-lg mx-4"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  exit={{ scale: 0, rotate: 180 }}
+                  transition={{ type: "spring", duration: 0.8 }}
                 >
-                  <PartyPopper className="w-20 h-20 mx-auto mb-6 text-yellow-300" />
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{
+                      duration: 0.5,
+                      repeat: Infinity,
+                      repeatDelay: 1,
+                    }}
+                  >
+                    <PartyPopper className="w-20 h-20 mx-auto mb-6 text-yellow-300" />
+                  </motion.div>
+                  <h2 className="text-4xl font-bold mb-4 text-white">
+                    🎉 Happy Birthday! 🎉
+                  </h2>
+                  <p className="text-xl text-white/90 mb-6">
+                    May all your wishes come true!
+                  </p>
+
+                  {/* Music Control Button */}
+                  <motion.button
+                    onClick={toggleMusic}
+                    className="mb-6 inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-full font-medium transition-all duration-300 backdrop-blur-sm border border-white/30"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isMusicPlaying ? (
+                      <>
+                        <Pause className="w-5 h-5" />
+                        <span>Pause Song</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-5 h-5" />
+                        <span>Play Song</span>
+                      </>
+                    )}
+                  </motion.button>
+
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={relightCandles}
+                      className="px-6 py-3 bg-white text-purple-600 rounded-full font-bold hover:bg-gray-100 transition"
+                    >
+                      Blow Again
+                    </button>
+                    <Link
+                      href="/"
+                      className="px-6 py-3 bg-purple-700 text-white rounded-full font-bold hover:bg-purple-800 transition"
+                    >
+                      Back to Party
+                    </Link>
+                  </div>
                 </motion.div>
-                <h2 className="text-4xl font-bold mb-4 text-white">
-                  🎉 Happy Birthday! 🎉
-                </h2>
-                <p className="text-xl text-white/90 mb-6">
-                  May all your wishes come true!
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <button
-                    onClick={relightCandles}
-                    className="px-6 py-3 bg-white text-purple-600 rounded-full font-bold hover:bg-gray-100 transition"
-                  >
-                    Blow Again
-                  </button>
-                  <Link
-                    href="/"
-                    className="px-6 py-3 bg-purple-700 text-white rounded-full font-bold hover:bg-purple-800 transition"
-                  >
-                    Back to Party
-                  </Link>
-                </div>
               </motion.div>
-            </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>

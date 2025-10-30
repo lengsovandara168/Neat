@@ -32,15 +32,15 @@ export function BirthdayHeader() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <Cake className="w-6 h-6 text-pink-400" />
-            <span className="font-cursive text-2xl text-pink-400">
+            <Cake className="w-6 h-6 text-pink-500" />
+            <span className="font-cursive text-2xl text-pink-600">
               Happy Day
             </span>
           </div>
 
           <nav className="hidden sm:flex items-center gap-6 text-sm font-semibold">
             <Link
-              href="#home"
+              href="/"
               className="text-gray-700 dark:text-gray-200 hover:text-pink-400 transition-colors"
             >
               Home
@@ -56,7 +56,6 @@ export function BirthdayHeader() {
               href="/messages"
               className="text-gray-700 dark:text-gray-200 hover:text-pink-400 transition-colors flex items-center gap-1"
             >
-              <MessageCircle className="w-4 h-4" />
               Messages
             </Link>
           </nav>
@@ -93,7 +92,7 @@ export function BirthdayHeader() {
           <div className="mt-2 mb-4 rounded-2xl border border-white/20 bg-white/60 dark:bg-white/10 backdrop-blur-xl shadow-lg">
             <nav className="flex flex-col p-3 text-sm font-semibold">
               <Link
-                href="#home"
+                href="/"
                 onClick={close}
                 className="px-3 py-2 rounded-md text-gray-800 dark:text-gray-100 hover:bg-white/70 dark:hover:bg-white/20 transition"
               >

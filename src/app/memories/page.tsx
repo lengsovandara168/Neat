@@ -51,6 +51,14 @@ const GALLERY_ITEMS = [
     id: 9,
     src: "/photos/memories/image_9.jpg",
   },
+  {
+    id: 10,
+    src: "/photos/memories/image_10.jpg",
+  },
+  {
+    id: 11,
+    src: "/photos/memories/image_11.jpg",
+  },
 ];
 
 export default function MemoriesPage() {
@@ -79,19 +87,8 @@ export default function MemoriesPage() {
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Back button */}
-      <div className="fixed top-4 left-4 z-50">
-        <Link
-          href="/"
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-xl border border-white/30 hover:bg-white/30 dark:hover:bg-white/20 transition-all shadow-lg"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back Home</span>
-        </Link>
-      </div>
-
       {/* View mode toggle */}
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-20 right-3 z-50">
         <div className="flex gap-2 p-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-xl border border-white/30 shadow-lg">
           <button
             onClick={() => setViewMode("circular")}
