@@ -5,13 +5,6 @@ import { HeroSection } from "@/components/HeroSection";
 import { FutureSection } from "@/components/FutureSection";
 import { BirthdayFooter } from "@/components/BirthdayFooter";
 import { BlobCursor } from "@/components/ui/blob-cursor";
-import { Spotlight } from "@/components/ui/spotlight";
-import { SparklesCore } from "@/components/ui/sparkles";
-import { TextReveal } from "@/components/ui/text-reveal";
-import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
-import { motion } from "framer-motion";
-import { Cake, Heart, Star, Gift, Music, Camera } from "lucide-react";
-import Image from "next/image";
 
 import Carousel from "@/components/ui/carousel";
 
@@ -34,32 +27,32 @@ const CAROUSEL_SLIDES = [
   {
     title: "Mountain Serenity",
     button: "Explore",
-    src: "/photos/image_1.jpg",
+    src: "/photos/hero/image_1.jpg",
   },
   {
     title: "Urban Elegance",
     button: "Discover",
-    src: "/photos/image_2.jpg",
+    src: "/photos/hero/image_2.jpg",
   },
   {
     title: "Natural Beauty",
     button: "View More",
-    src: "/photos/image_3.jpg",
+    src: "/photos/hero/image_3.jpg",
   },
   {
     title: "Dreamy Landscapes",
     button: "Explore",
-    src: "/photos/image_4.jpg",
+    src: "/photos/hero/image_4.jpg",
   },
-    {
+  {
     title: "Dreamy Landscapes",
     button: "Explore",
-    src: "/photos/image_5.jpg",
+    src: "/photos/hero/image_5.jpg",
   },
-    {
+  {
     title: "Dreamy Landscapes",
     button: "Explore",
-    src: "/photos/image_6.jpg",
+    src: "/photos/hero/image_6.jpg",
   },
 ];
 
@@ -86,7 +79,6 @@ export default function Page() {
         message={BIRTHDAY_PERSON.message}
       />
 
-      {/* Carousel */}
       <div className="relative overflow-hidden w-full h-full py-20">
         <Carousel slides={CAROUSEL_SLIDES} />
       </div>
