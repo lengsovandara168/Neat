@@ -54,6 +54,14 @@ export default function CakePage() {
   // Voice/Audio detection setup
   const startListening = async () => {
     try {
+      // Avoid creating multiple AudioContexts (can happen in React StrictMode/Turbopack fast refresh)
+      if (
+        isListening ||
+        (audioContextRef.current && audioContextRef.current.state !== "closed")
+      ) {
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -61,7 +69,21 @@ export default function CakePage() {
           autoGainControl: false,
         },
       });
-      const audioContext = new AudioContext();
+      // Prefer vendor-prefixed AudioContext if needed (Safari)
+      const AudioCtx =
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext ||
+        AudioContext;
+      const audioContext = new AudioCtx();
+      if (audioContext.state === "suspended") {
+        // Attempt to resume immediately after user gesture
+        try {
+          await audioContext.resume();
+        } catch {
+          // ignore
+        }
+      }
       const analyser = audioContext.createAnalyser();
       const microphone = audioContext.createMediaStreamSource(stream);
 
@@ -83,17 +105,39 @@ export default function CakePage() {
   };
 
   const stopListening = () => {
-    if (microphoneRef.current && microphoneRef.current.mediaStream) {
-      microphoneRef.current.mediaStream
-        .getTracks()
-        .forEach((track) => track.stop());
+    // Stop mic tracks safely (idempotent)
+    try {
+      if (microphoneRef.current && microphoneRef.current.mediaStream) {
+        microphoneRef.current.mediaStream.getTracks().forEach((track) => {
+          if (track.readyState !== "ended") track.stop();
+        });
+      }
+    } catch {
+      // noop
     }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
+
+    // Close AudioContext only if not already closed
+    try {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== "closed"
+      ) {
+        audioContextRef.current.close();
+      }
+    } catch {
+      // Some browsers may throw if already closed; ignore
+    } finally {
+      audioContextRef.current = null;
     }
+
+    // Cancel animation frame if scheduled
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
+
+    analyserRef.current = null;
+    microphoneRef.current = null;
     setIsListening(false);
     setAudioLevel(0);
   };
@@ -219,86 +263,116 @@ export default function CakePage() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20">
-        {/* Header */}
+        {/* Header - Fluid Glass */}
         <motion.div
-          className="text-center mb-12"
+          className="relative mb-12 w-full"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-linear-to-r from-pink-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
-            Make a Wish! 🎂
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6">
-            Click on the candle or use your voice to blow it out!
-          </p>
-
-          {/* Voice Control Toggle */}
-          <div className="flex justify-center gap-4 mb-4">
-            {!isListening ? (
-              <motion.button
-                onClick={startListening}
-                className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 rounded-full font-bold text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Mic className="w-5 h-5" />
-                Enable Voice Blowing
-              </motion.button>
-            ) : (
-              <motion.button
-                onClick={stopListening}
-                className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-red-500 to-pink-500 rounded-full font-bold text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                <MicOff className="w-5 h-5" />
-                Stop Listening
-              </motion.button>
-            )}
-          </div>
-
-          {/* Audio Level Indicator */}
-          {isListening && (
+          <div className="relative max-w-3xl mx-auto overflow-hidden rounded-3xl border border-white/15 bg-white/10 dark:bg-white/5 backdrop-blur-xl shadow-xl">
+            {/* Fluid gradient blobs (background) */}
             <motion.div
-              className="max-w-md mx-auto"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <p className="text-sm text-gray-400 mb-2">
-                💨 Take a deep breath and blow steadily!
+              aria-hidden
+              className="pointer-events-none absolute -top-16 -left-12 w-64 h-64 rounded-full bg-pink-500/30 blur-3xl"
+              animate={{ x: [0, 20, -10, 0], y: [0, 10, -20, 0] }}
+              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-16 -right-12 w-72 h-72 rounded-full bg-purple-500/30 blur-3xl"
+              animate={{ x: [0, -25, 10, 0], y: [0, -15, 25, 0] }}
+              transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-cyan-400/20 blur-3xl"
+              animate={{ scale: [0.9, 1.1, 0.95, 1] }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            {/* Content */}
+            <div className="relative z-10 px-6 py-8 md:px-10 md:py-12 text-center">
+              <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-linear-to-r from-pink-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                Make a Wish! 🎂
+              </h1>
+              <p className="text-xl text-gray-800/80 dark:text-gray-300 max-w-2xl mx-auto mb-6">
+                Click on the candle or use your voice to blow it out!
               </p>
-              <div className="relative">
-                <div className="w-full h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
-                  <motion.div
-                    className={`h-full transition-colors duration-300 ${
-                      audioLevel > 35
-                        ? "bg-linear-to-r from-green-500 to-emerald-500"
-                        : "bg-linear-to-r from-pink-500 to-purple-500"
-                    }`}
-                    style={{
-                      width: `${Math.min((audioLevel / 100) * 100, 100)}%`,
-                    }}
-                    transition={{ duration: 0.1 }}
-                  />
-                </div>
-                {/* Threshold indicator */}
-                <div className="absolute top-0 bottom-0 left-[35%] w-0.5 bg-yellow-400 opacity-50">
-                  <div className="absolute -top-1 -left-1 w-2 h-2 bg-yellow-400 rounded-full" />
-                </div>
+
+              {/* Voice Control Toggle */}
+              <div className="flex justify-center gap-4 mb-4">
+                {!isListening ? (
+                  <motion.button
+                    onClick={startListening}
+                    className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-pink-500 to-purple-500 rounded-full font-bold text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Mic className="w-5 h-5" />
+                    Enable Voice Blowing
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    onClick={stopListening}
+                    className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-red-500 to-pink-500 rounded-full font-bold text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    <MicOff className="w-5 h-5" />
+                    Stop Listening
+                  </motion.button>
+                )}
               </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Volume: {Math.round(audioLevel)}</span>
-                <span
-                  className={audioLevel > 35 ? "text-green-400 font-bold" : ""}
+
+              {/* Audio Level Indicator */}
+              {isListening && (
+                <motion.div
+                  className="max-w-md mx-auto"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                 >
-                  {audioLevel > 35 ? "🔥 Blowing!" : "Blow harder →"}
-                </span>
-              </div>
-            </motion.div>
-          )}
+                  <p className="text-sm text-gray-700/80 dark:text-gray-400 mb-2">
+                    💨 Take a deep breath and blow steadily!
+                  </p>
+                  <div className="relative">
+                    <div className="w-full h-4 bg-black/20 dark:bg-gray-800 rounded-full overflow-hidden border border-white/20 dark:border-gray-700">
+                      <motion.div
+                        className={`h-full transition-colors duration-300 ${
+                          audioLevel > 35
+                            ? "bg-linear-to-r from-green-500 to-emerald-500"
+                            : "bg-linear-to-r from-pink-500 to-purple-500"
+                        }`}
+                        style={{
+                          width: `${Math.min((audioLevel / 100) * 100, 100)}%`,
+                        }}
+                        transition={{ duration: 0.1 }}
+                      />
+                    </div>
+                    {/* Threshold indicator */}
+                    <div className="absolute top-0 bottom-0 left-[35%] w-0.5 bg-yellow-400/70 opacity-70">
+                      <div className="absolute -top-1 -left-1 w-2 h-2 bg-yellow-400 rounded-full" />
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-700/80 dark:text-gray-500 mt-1">
+                    <span>Volume: {Math.round(audioLevel)}</span>
+                    <span
+                      className={
+                        audioLevel > 35 ? "text-green-400 font-bold" : ""
+                      }
+                    >
+                      {audioLevel > 35 ? "🔥 Blowing!" : "Blow harder →"}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Subtle glass sheen */}
+            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-white/10 to-transparent" />
+          </div>
         </motion.div>
 
         {/* Birthday Cake SVG */}

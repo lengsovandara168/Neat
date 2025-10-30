@@ -44,12 +44,22 @@ const CAROUSEL_SLIDES = [
   {
     title: "Natural Beauty",
     button: "View More",
-    src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=3540&auto=format&fit=crop",
+    src: "/photos/image_3.jpg",
   },
   {
     title: "Dreamy Landscapes",
     button: "Explore",
-    src: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=3474&auto=format&fit=crop",
+    src: "/photos/image_4.jpg",
+  },
+    {
+    title: "Dreamy Landscapes",
+    button: "Explore",
+    src: "/photos/image_5.jpg",
+  },
+    {
+    title: "Dreamy Landscapes",
+    button: "Explore",
+    src: "/photos/image_6.jpg",
   },
 ];
 

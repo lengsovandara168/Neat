@@ -72,7 +72,7 @@ export function HeroSection({ name, photoSrc, message }: HeroSectionProps) {
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-2 w-full sm:w-auto">
           <a
-            href="#memories"
+            href="/memories"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-gray-800 font-semibold shadow border border-gray-200 hover:bg-gray-50 active:bg-gray-100 transition w-full sm:w-auto touch-manipulation"
           >
             <Camera className="w-5 h-5" />

@@ -143,10 +143,19 @@ const CarouselControl = ({
 
 interface CarouselProps {
   slides: SlideData[];
+  autoPlay?: boolean;
+  interval?: number; 
+  pauseOnHover?: boolean;
 }
 
-export default function Carousel({ slides }: CarouselProps) {
+export default function Carousel({
+  slides,
+  autoPlay = true,
+  interval = 3500,
+  pauseOnHover = true,
+}: CarouselProps) {
   const [current, setCurrent] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handlePreviousClick = () => {
     const previous = current - 1;
@@ -166,9 +175,23 @@ export default function Carousel({ slides }: CarouselProps) {
 
   const id = useId();
 
+  // Auto-advance slides
+  useEffect(() => {
+    if (!autoPlay || slides.length <= 1) return;
+    if (pauseOnHover && isHovered) return;
+
+    const timer = window.setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, Math.max(100, interval));
+
+    return () => window.clearInterval(timer);
+  }, [autoPlay, interval, pauseOnHover, isHovered, slides.length]);
+
   return (
     <div
       className="relative w-[70vmin] h-[70vmin] mx-auto"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       aria-labelledby={`carousel-heading-${id}`}
     >
       <ul

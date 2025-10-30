@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Heart, Sparkles } from "lucide-react";
+import { Heart, Sparkles, Star } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -20,9 +20,54 @@ const messages: MessageCard[] = [
     title: "Happy Birthday, Monineath!",
     message:
       "Hey! Just wanted to say happy birthday and hope you have an amazing day! You're such a great person and I'm really glad we're friends. Thank you for always being kind and genuine. Hope this year brings you lots of happiness, good memories, and all the success you deserve. Enjoy your special day! 🎉",
-    author: "From Your Friend",
-    color: "from-pink-500 via-purple-500 to-rose-500",
+    author: "From Leng Sovandara",
+    color: "from-pink-300 via-purple-500 to-rose-500",
+    icon: <Star className="w-6 h-6" />,
+  },
+  {
+    id: 2,
+    title: "Wishing you all the joy",
+    message:
+      "Happiest birthday, Moni! Your smile lights up every room. Keep being your sweet, talented self. May this year be full of good grades, cozy days, and new adventures!",
+    author: "From Sreypich",
+    color: "from-fuchsia-400 via-pink-400 to-orange-400",
     icon: <Heart className="w-6 h-6" />,
+  },
+  {
+    id: 3,
+    title: "To more laughs and memories",
+    message:
+      "Cheers to another year of inside jokes, late-night talks, and the best food runs. Proud of you always. You got this!",
+    author: "From Rithy",
+    color: "from-indigo-400 via-sky-400 to-cyan-400",
+    icon: <Sparkles className="w-6 h-6" />,
+  },
+  {
+    id: 4,
+    title: "You deserve the best",
+    message:
+      "Happy birthday! Thanks for being such a caring friend. I hope every little wish on your mind finds its way to you this year.",
+    author: "From Bopha",
+    color: "from-violet-500 via-purple-500 to-pink-500",
+    icon: <Star className="w-6 h-6" />,
+  },
+  {
+    id: 5,
+    title: "Keep shining",
+    message:
+      "Moni, your energy is sunshine. Keep shining bright and sharing that kindness. Wishing you peace, growth, and lots of yummy cake!",
+    author: "From Vanna",
+    color: "from-rose-400 via-red-400 to-amber-400",
+    icon: <Heart className="w-6 h-6" />,
+  },
+  {
+    id: 6,
+    title: "So proud of you",
+    message:
+      "Another year, another level up! Proud of everything you've done and excited for everything coming next. Happiest birthday!",
+    author: "From Sokun",
+    color: "from-emerald-400 via-teal-400 to-cyan-400",
+    icon: <Sparkles className="w-6 h-6" />,
   },
 ];
 
@@ -65,7 +110,7 @@ export default function MessagesPage() {
           </span>
         </h1>
         <p className="text-xl text-gray-600 dark:text-gray-300">
-          Heartfelt wishes for Mok Chanmonineath 💝
+          wish for Mok Chanmonineath
         </p>
       </motion.div>
 
@@ -80,7 +125,7 @@ export default function MessagesPage() {
             whileHover={{ y: -8, transition: { duration: 0.2 } }}
             className="group"
           >
-            <div className="relative h-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-8 md:p-10 shadow-lg hover:shadow-2xl transition-all duration-300 border border-white/50 dark:border-gray-700/50">
+            <div className="my-5 relative h-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-8 md:p-10 shadow-lg hover:shadow-2xl transition-all duration-300 border border-white/50 dark:border-gray-700/50">
               {/* Gradient border on hover */}
               <div
                 className={cn(
