@@ -53,8 +53,8 @@ const GALLERY_ITEMS = [
   },
   {
     id: 12,
-    src: "/photos/memories/image_12.jpg",
-  }
+    src: "/photos/memories/image.png",
+  },
 ];
 
 export default function MemoriesPage() {

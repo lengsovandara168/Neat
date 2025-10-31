@@ -54,6 +54,15 @@ const messages: MessageCard[] = [
     color: "from-indigo-400 via-sky-400 to-cyan-400",
     icon: <Heart className="w-6 h-6" />,
   },
+  {
+    id: 4,
+    title: "To more laughs and memories",
+    message:
+      "Wish for neath: From the bottom of my heart, thank you Neath for being born into this world, thank you for being such a lovely person who always makes me laugh, I hope you will forever have this cute side of you. Hope you know that you’ll always be kmeng toch in my eyes always (in a good way ofc) I love you 🫶🏻",
+    author: "From MeyLy",
+    color: "from-indigo-400 via-sky-400 to-cyan-400",
+    icon: <Heart className="w-6 h-6" />,
+  },
 ];
 
 export default function MessagesPage() {
