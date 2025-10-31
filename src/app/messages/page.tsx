@@ -31,7 +31,8 @@ const messages: MessageCard[] = [
   {
     id: 2,
     title: "",
-    message: "Happy Birthday",
+    message:
+      "រីករាយថ្ងៃចាប់កំណើត នាថ wish you all the best and a happy in life 🎉",
     author: "From Chea Menghour",
     color: "from-fuchsia-400 via-pink-400 to-orange-400",
     icon: <Sparkles className="w-6 h-6" />,
