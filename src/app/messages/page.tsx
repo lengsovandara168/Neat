@@ -34,7 +34,7 @@ const messages: MessageCard[] = [
     message: "Happy Birthday",
     author: "From Chea Menghour",
     color: "from-fuchsia-400 via-pink-400 to-orange-400",
-    icon: <Heart className="w-6 h-6" />,
+    icon: <Sparkles className="w-6 h-6" />,
   },
   {
     id: 3,
@@ -43,7 +43,16 @@ const messages: MessageCard[] = [
       "Happy Birthday, Neath!! Welcome to the 20 gang. I wish you happiness, health, and wealth. I just want to say how amazing you are as a friend and how thankful I am to have you by my side. You are the most cheerful person ever; I just want to say that no matter where you go and what you do, just be the fullest version of yourself. Go on with your dream; do your best. I believe you will accomplish it. Love you <3 Hugs & Kisses ",
     author: "From Nida💋",
     color: "from-indigo-400 via-sky-400 to-cyan-400",
-    icon: <Sparkles className="w-6 h-6" />,
+    icon: <Heart className="w-6 h-6" />,
+  },
+  {
+    id: 3,
+    title: "To more laughs and memories",
+    message:
+      "Happiest birthday to you Neath!!!❤️😚🎂 I wish you all the best and that you achieve everything you want in life. I hope you’ll find someone who’ll love and cherish you for you. May the upcoming years treat you warmly and beautifully",
+    author: "From Dalin❤️",
+    color: "from-indigo-400 via-sky-400 to-cyan-400",
+    icon: <Heart className="w-6 h-6" />,
   },
 ];
 
