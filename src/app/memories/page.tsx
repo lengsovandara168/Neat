@@ -49,7 +49,7 @@ const GALLERY_ITEMS = [
   },
   {
     id: 11,
-    src: "/photos/memories/image_11.jpg",
+    src: "/photos/memories/image_13.jpg",
   },
   {
     id: 12,
